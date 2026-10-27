@@ -345,6 +345,7 @@ function hill(dawn) {
 function carriage() {
   const a = base({ fog: 0x0a0e24, density: 0.006, hemi: [0x9aa6e0, 0x4a3420, 1.1], moon: [0xcfe0ff, 0.9], moonDir: [0.6, 0.8, 0.2] });
   a.trainSound = true;
+  a.narrow = true;
   a.camMax = 3.4;
   a.envIntensity = 0.4;
   const W = 3.0, L = 16, H = 2.75;
@@ -408,20 +409,33 @@ function carriage() {
   }
   for (const z of [-4.5, 0.5, 5.5]) light(a, 0xffc98a, 7, 9, 0, H - 0.45, z);
 
-  // Velvet seats facing each other in bays, with sit spots.
-  const seatS = 1.1 / 1.45;
+  // Velvet seats facing each other in bays. The Meshy bench is stretched upward so a seated
+  // child's feet reach the floor. Each seat records where the hips go (window half of the
+  // cushion) and an aisle spot to stand back up to; facing seats are partners.
+  const seatS = 1.1 / 1.45, seatLift = 1.6;
+  const probe = new THREE.Raycaster();
+  let cushionY = null;
   let n = 0;
   for (const zc of [-5.5, -2.1, 1.3]) {
     for (const sx of [-0.92, 0.92]) {
+      const pair = [];
       for (const [dz, rot] of [[-0.78, 0], [0.78, Math.PI]]) {
-        const z = zc + dz;
-        put(a, 'seat', sx, z, { rot, s: seatS, y: 0 });
-        a.obstacles.push({ x: sx, z: z - Math.cos(rot) * 0.1, r: 0.5 });
-        item(a, {
-          id: `seat${n++}`, group: 'sit', kind: 'sit', label: '坐下', r: 1.0,
-          pos: V(sx * 0.55, 0, z + Math.cos(rot) * 0.42), seat: { x: sx, y: 0.05, z: z + Math.cos(rot) * 0.12, yaw: rot },
-        });
+        const z = zc + dz, f = Math.cos(rot); // f = +1 faces +z, -1 faces -z
+        const bench = put(a, 'seat', sx, z, { rot, s: seatS, y: 0 });
+        bench.scale.y *= seatLift;
+        if (cushionY === null) {
+          bench.updateMatrixWorld(true);
+          probe.set(V(sx, 3, z + f * 0.05), V(0, -1, 0));
+          cushionY = probe.intersectObject(bench, true)[0]?.point.y ?? 0.35;
+        }
+        // Collision hugs the bench (inner edge at |x| = 0.37) so the aisle stays ~0.6 m walkable.
+        a.obstacles.push({ x: Math.sign(sx) * 1.0, z: z - f * 0.1, r: 0.42 });
+        const seat = { id: `seat${n}`, y: cushionY, hipX: sx + Math.sign(sx) * 0.26, hipZ: z + f * 0.15, yaw: rot, standX: Math.sign(sx) * 0.1, standZ: z + f * 0.55 };
+        pair.push(seat);
+        item(a, { id: `seat${n++}`, group: 'sit', kind: 'sit', label: '坐下', r: 0.9, pos: V(sx * 0.45, 0, z + f * 0.5), seat });
       }
+      pair[0].partner = pair[1];
+      pair[1].partner = pair[0];
     }
   }
 
@@ -458,7 +472,7 @@ function carriage() {
     markers.instanceMatrix.needsUpdate = true;
     flow.userData.scroll(scroll);
   });
-  a.spawns = [[-0.15, -6.9, 0], [0.2, -6.1, 0]];
+  a.spawns = [[-0.18, -7.1, 0], [0.18, -7.1, 0]]; // side by side in the aisle, clear of the seats
   return a;
 }
 

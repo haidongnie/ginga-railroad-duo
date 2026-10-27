@@ -44,6 +44,8 @@ export const myPlayer = () => (offline ? local.player : PK.myPlayer());
 export const getState = (k) => (offline ? local.states[k] : PK.getState(k));
 export const setState = (k, v) => (offline ? (local.states[k] = v) : PK.setState(k, v, true));
 export const roomCode = () => (offline ? null : PK.getRoomCode());
+// Everyone currently in the room (including me), readable synchronously.
+export const players = () => (offline ? [local.player] : Object.values(PK.getParticipants()));
 
 // Playroom patches object states key-by-key, so nulls and removed keys don't always propagate.
 // Shared story state is therefore stored as JSON strings, which are replaced atomically.

@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { spawn, clips, CLIP } from '../core/assets.js';
 
+const SIT_OFFSET = {};
+const _head = new THREE.Vector3();
+
 // A Meshy-rigged character with cross-faded animation states and an optional floating name tag.
 export class Character {
   constructor(id, { label, color = '#f4d58d' } = {}) {
@@ -24,6 +27,7 @@ export class Character {
     this.current = null;
     this.state = null;
     this.opacity = 1;
+    this.model.traverse((o) => { if (!this.head && o.isBone && /^head$/i.test(o.name)) this.head = o; });
     if (label) this.setLabel(label, color);
     this.play('idle', 0);
   }
@@ -51,6 +55,23 @@ export class Character {
 
   setSpeed(scale) {
     if (this.current) this.current.timeScale = scale;
+  }
+
+  // Hip position relative to the feet/root in the seated clip, measured once per model,
+  // so callers can place the root such that the hips land on a cushion.
+  sitOffset() {
+    if (SIT_OFFSET[this.id]) return SIT_OFFSET[this.id];
+    let hips = null;
+    if (this.actions.sit) {
+      const probe = new Character(this.id);
+      probe.play('sit', 0);
+      probe.update(0.5);
+      probe.root.updateMatrixWorld(true);
+      probe.model.traverse((o) => { if (!hips && o.isBone && /hips/i.test(o.name)) hips = o.getWorldPosition(new THREE.Vector3()); });
+      probe.dispose();
+    }
+    SIT_OFFSET[this.id] = hips ? { x: hips.x, y: hips.y, z: hips.z } : { x: 0, y: 0.5, z: -0.28 };
+    return SIT_OFFSET[this.id];
   }
 
   setLabel(text, color) {
@@ -96,6 +117,11 @@ export class Character {
 
   update(dt) {
     this.mixer.update(dt);
+    // Keep the name tag just above the head, so it drops with the character when seated.
+    if (this.label && this.head) {
+      this.head.getWorldPosition(_head);
+      this.label.position.y += (_head.y - this.root.position.y + 0.42 - this.label.position.y) * Math.min(1, dt * 10);
+    }
   }
 
   dispose() {

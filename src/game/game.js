@@ -26,7 +26,7 @@ export class Game {
     this.dlgKey = '';
     this.spirit = null;
     this.hostKey = null;
-    this.hostEventT = 0;
+    this.stepT = 0; // time spent in the current step, kept by every client
     this._v = V();
   }
 
@@ -44,7 +44,7 @@ export class Game {
     me.setState('name', name, true);
     net.onPlayerJoin((p) => this.onJoin(p));
 
-    const taken = [...this.remotes.values()].map((r) => r.p.getState('role')).filter(Boolean);
+    const taken = net.players().filter((p) => p.id !== me.id).map((p) => p.getState('role')).filter(Boolean);
     let role = me.getState('role');
     if (!role || taken.includes(role)) {
       role = taken.includes('giovanni') ? 'campanella' : taken.includes('campanella') ? 'giovanni' : net.isHost() ? 'giovanni' : 'campanella';
@@ -87,8 +87,8 @@ export class Game {
 
   // Everyone in the party (humans + AI companion), positions in the current area.
   party() {
-    const list = [{ role: this.me.role, pos: this.me.pos, human: true }];
-    for (const r of this.remotes.values()) if (r.seen) list.push({ role: r.p.getState('role'), pos: r.target, human: true });
+    const list = [{ id: net.myPlayer().id, role: this.me.role, pos: this.me.pos, human: true }];
+    for (const r of this.remotes.values()) if (r.seen) list.push({ id: r.p.id, role: r.p.getState('role'), pos: r.target, human: true });
     if (this.ai) list.push({ role: this.ai.role, pos: this.ai.pos, human: false });
     return list;
   }
@@ -97,7 +97,10 @@ export class Game {
     const res = {};
     if (!step?.plates || !this.area) return res;
     const party = this.party();
-    for (const id of step.plates) res[id] = party.some((m) => flat(m.pos, this.area.points[id]) < 1.3);
+    for (const id of step.plates) {
+      const pt = this.area.points[id];
+      if (pt) res[id] = party.some((m) => flat(m.pos, pt) < 1.3);
+    }
     return res;
   }
 
@@ -110,8 +113,10 @@ export class Game {
     const key = `${g.run}:${g.ch}:${g.st}`;
     if (key !== this.hostKey) {
       this.hostKey = key;
-      this.hostEventT = 0;
-      if (step.type === 'dialog') net.setJSON('dlg', { id: step.id, i: 0 });
+      // A new host (migration / reload) keeps a dialog that is already running for this step.
+      if (step.type === 'dialog' && net.getJSON('dlg')?.id !== step.id) net.setJSON('dlg', { id: step.id, i: 0 });
+      // A dialog never outlives its own step.
+      if (step.type !== 'dialog' && net.getJSON('dlg')) net.setJSON('dlg', null);
     }
     const areaKey = `${g.run}:${g.ch}`;
     if (this.areaKey !== areaKey) return;
@@ -132,8 +137,8 @@ export class Game {
         if (fl.talk === step.target) this.hostAdvance();
         break;
       case 'each': {
-        const humans = party.filter((m) => m.human).map((m) => m.role);
-        if (humans.every((r) => (fl.each || []).includes(r))) this.hostAdvance();
+        const humans = party.filter((m) => m.human).map((m) => m.id);
+        if (humans.every((id) => (fl.each || []).includes(id))) this.hostAdvance();
         break;
       }
       case 'plates': {
@@ -143,8 +148,7 @@ export class Game {
         break;
       }
       case 'event':
-        this.hostEventT += dt;
-        if (this.hostEventT >= step.dur) this.hostAdvance();
+        if (this.stepT >= step.dur) this.hostAdvance();
         break;
     }
   }
@@ -168,7 +172,7 @@ export class Game {
     }
   }
 
-  hostAct({ id, role, from }) {
+  hostAct({ id, from }) {
     if (!net.isHost() || !this.area) return;
     const g = this.g();
     const step = this.step(g);
@@ -185,7 +189,7 @@ export class Game {
     } else if (step.type === 'talk' && id === step.target) {
       fl.talk = id;
     } else if (step.type === 'each' && id === step.target) {
-      fl.each = uniq([...(fl.each || []), role]);
+      fl.each = uniq([...(fl.each || []), from]);
     } else return;
     this.setG({ ...g, fl });
   }
@@ -228,6 +232,7 @@ export class Game {
     this.me.pos.set(x, this.area.height(x, z), z);
     this.me.yaw = yaw;
     this.me.sit = null;
+    this.unstick(this.me.pos);
     this.cam.yaw = yaw + Math.PI;
     this.cam.pitch = 0.3;
     this.cam.dist = Math.min(5, this.area.camMax);
@@ -240,6 +245,7 @@ export class Game {
     this.stepKey = null;
     const p = net.myPlayer();
     p.setState('p', [this.me.pos.x, this.me.pos.y, this.me.pos.z, this.me.yaw], true);
+    p.setState('seat', '', true);
     p.setState('ld', key, true);
     this.renderer.compile(this.scene, this.camera);
     this.hud.setChapter(ch.label, ch.title);
@@ -290,8 +296,10 @@ export class Game {
       if (sk !== this.stepKey) {
         const fresh = !!this.stepKey && this.stepKey.startsWith(key + ':');
         this.stepKey = sk;
+        this.stepT = 0;
         this.onStep(g, fresh);
       }
+      this.stepT += dt;
       this.syncDialog();
     }
 
@@ -300,8 +308,9 @@ export class Game {
     this.updateRemotes(dt);
     this.updateSpirit(dt);
     this.hostTick(dt);
-    const step = this.step(g);
-    this.area.update(dt, t, { fl: g.fl || {}, step, occupied: this.occupied(step) });
+    // While the next chapter's area is still loading, the old area must not see the new step.
+    const step = this.areaKey === key ? this.step(g) : null;
+    this.area.update(dt, t, { fl: step ? g.fl || {} : {}, step, occupied: this.occupied(step) });
     this.updateCamera(dt);
     this.updateHud(g, step);
     this.input.endFrame();
@@ -332,13 +341,113 @@ export class Game {
     }
   }
 
+  // A spot a character may stand on: walkable and clear of every obstacle.
+  isFree(x, z) {
+    const a = this.area;
+    return a.walkable(x, z) && a.obstacles.every((o) => (x - o.x) ** 2 + (z - o.z) ** 2 > (o.r + RADIUS) ** 2);
+  }
+
+  // Moves `pos` to the nearest free spot if it is inside an obstacle or off the walkable area.
+  unstick(pos) {
+    if (this.isFree(pos.x, pos.z)) return;
+    for (let r = 0.15; r <= 6; r += 0.15) {
+      for (let k = 0; k < 24; k++) {
+        const ang = (k / 24) * Math.PI * 2;
+        const x = pos.x + Math.cos(ang) * r, z = pos.z + Math.sin(ang) * r;
+        if (this.isFree(x, z)) { pos.x = x; pos.z = z; pos.y = this.area.height(x, z); return; }
+      }
+    }
+  }
+
   moveWithCollision(pos, dx, dz) {
     const a = this.area;
-    const free = (x, z) => a.walkable(x, z) && a.obstacles.every((o) => (x - o.x) ** 2 + (z - o.z) ** 2 > (o.r + RADIUS) ** 2);
-    if (free(pos.x + dx, pos.z + dz)) { pos.x += dx; pos.z += dz; return true; }
-    if (free(pos.x + dx, pos.z)) { pos.x += dx; return true; }
-    if (free(pos.x, pos.z + dz)) { pos.z += dz; return true; }
+    // An obstacle you already overlap only blocks moves that go deeper into it,
+    // so nothing (a seat, a teleport, a spawn) can trap a character inside one.
+    const ok = (x, z) => a.walkable(x, z) && a.obstacles.every((o) => {
+      const d2 = (x - o.x) ** 2 + (z - o.z) ** 2;
+      return d2 > (o.r + RADIUS) ** 2 || d2 > (pos.x - o.x) ** 2 + (pos.z - o.z) ** 2;
+    });
+    if (ok(pos.x + dx, pos.z + dz)) { pos.x += dx; pos.z += dz; return true; }
+    // Slide around the obstacle that blocks the move: drop the part of the move that points into it.
+    // (The tangent step always increases the distance to that obstacle, so it can't push us deeper.)
+    const nx0 = pos.x + dx, nz0 = pos.z + dz;
+    const o = a.obstacles.find((o) => {
+      const d2 = (nx0 - o.x) ** 2 + (nz0 - o.z) ** 2;
+      return d2 <= (o.r + RADIUS) ** 2 && d2 <= (pos.x - o.x) ** 2 + (pos.z - o.z) ** 2;
+    });
+    if (o) {
+      let nx = pos.x - o.x, nz = pos.z - o.z;
+      const l = Math.hypot(nx, nz);
+      if (l > 1e-6) {
+        nx /= l; nz /= l;
+        const k = dx * nx + dz * nz;
+        if (k < 0) {
+          const sx = dx - k * nx, sz = dz - k * nz;
+          if (Math.hypot(sx, sz) > 1e-6 && ok(pos.x + sx, pos.z + sz)) { pos.x += sx; pos.z += sz; return true; }
+        }
+      }
+    }
+    // Axis fallback for walls and corners; a zero-length axis move is not progress.
+    if (Math.abs(dx) > 1e-6 && ok(pos.x + dx, pos.z)) { pos.x += dx; return true; }
+    if (Math.abs(dz) > 1e-6 && ok(pos.x, pos.z + dz)) { pos.z += dz; return true; }
     return false;
+  }
+
+  // Root pose that puts a character's hips on the seat cushion, facing out of the seat.
+  seatPose(char, seat) {
+    const h = char.sitOffset();
+    const c = Math.cos(seat.yaw), s = Math.sin(seat.yaw);
+    return {
+      x: seat.hipX - (h.x * c + h.z * s),
+      y: seat.y - (h.y - 0.1),
+      z: seat.hipZ - (-h.x * s + h.z * c),
+      yaw: seat.yaw,
+      seat,
+    };
+  }
+
+  // Is someone else (remote player or the AI) already sitting on this seat?
+  // Remote players publish the id of the seat they occupy in their 'seat' state.
+  seatTaken(seat, except) {
+    if (except !== 'ai' && this.ai?.sit?.seat === seat) return true;
+    if (except !== 'me' && this.me.sit?.seat === seat) return true;
+    for (const r of this.remotes.values()) if (r.seen && r.p.getState('seat') === seat.id) return true;
+    return false;
+  }
+
+  sitDown(seat) {
+    if (this.seatTaken(seat, 'me')) { this.hud.toast('这个座位已经有人了'); return; }
+    const me = this.me;
+    me.sit = this.seatPose(me.char, seat);
+    me.sitHold = true; // stay seated until the move input has been released once
+    me.pos.set(me.sit.x, me.sit.y, me.sit.z);
+    me.yaw = seat.yaw;
+    me.anim = 'sit';
+    me.char.play('sit');
+    this.publishPose(seat.id);
+  }
+
+  standUp() {
+    const me = this.me;
+    const seat = me.sit?.seat;
+    me.sit = null;
+    me.sitHold = false;
+    if (!seat) return;
+    me.pos.set(seat.standX, this.area.height(seat.standX, seat.standZ), seat.standZ);
+    this.unstick(me.pos);
+    me.anim = 'idle';
+    me.char.play('idle');
+    this.publishPose('');
+  }
+
+  // Sends position, animation and seat together right away, so partners never see
+  // a seated pose in the aisle (or a standing one inside a bench).
+  publishPose(seatId) {
+    const me = this.me, p = net.myPlayer();
+    p.setState('seat', seatId, true);
+    p.setState('a', me.anim, true);
+    p.setState('p', [+me.pos.x.toFixed(2), +me.pos.y.toFixed(2), +me.pos.z.toFixed(2), +me.yaw.toFixed(2)], true);
+    me.sendT = 0;
   }
 
   updateLocal(dt, t, g) {
@@ -351,10 +460,14 @@ export class Game {
     const dz = -Math.cos(yaw) * mv.y - Math.sin(yaw) * mv.x;
     const mag = Math.hypot(dx, dz);
     let anim = 'idle';
-    if (mag > 0.08) {
-      if (me.sit) me.sit = null;
+    if (me.sit && mag <= 0.08) me.sitHold = false;
+    if (mag > 0.08 && !(me.sit && me.sitHold)) {
+      if (me.sit) this.standUp();
       const speed = (mv.run ? RUN : WALK) * Math.min(1, mag);
-      this.moveWithCollision(me.pos, (dx / mag) * speed * dt, (dz / mag) * speed * dt);
+      const moved = this.moveWithCollision(me.pos, (dx / mag) * speed * dt, (dz / mag) * speed * dt);
+      // Safety net: if input keeps getting rejected while we stand somewhere invalid, step out.
+      me.blockedT = moved ? 0 : (me.blockedT || 0) + dt;
+      if (me.blockedT > 0.4 && !this.isFree(me.pos.x, me.pos.z)) { this.unstick(me.pos); me.blockedT = 0; }
       me.yaw = angleLerp(me.yaw, Math.atan2(dx, dz), 1 - Math.exp(-dt * 12));
       anim = mv.run ? 'run' : 'walk';
     }
@@ -378,25 +491,31 @@ export class Game {
     ch.update(dt);
 
     // Interactions.
+    const step = this.step(g);
+    const fl = g.fl || {};
+    for (const it of this.area.items) {
+      if (it.ring) it.ring.visible = this.available(it, step, fl);
+      if (it.obj && it.hideOnCollect) it.obj.visible = !(fl[it.group] || []).includes(it.id);
+      if (it.obj && it.hideOnCollect && it.obj.visible) it.obj.rotation.y += dt * 0.8;
+    }
     let best = null;
-    if (!frozen) {
-      const step = this.step(g);
-      const fl = g.fl || {};
+    if (!frozen && !me.sit) {
       let bestD = 1e9;
       for (const it of this.area.items) {
         if (!this.available(it, step, fl)) continue;
+        if (it.kind === 'sit' && this.seatTaken(it.seat, 'me')) continue;
         const d = flat(me.pos, it.pos);
         if (d < it.r && d < bestD) { best = it; bestD = d; }
       }
-      for (const it of this.area.items) {
-        if (it.ring) it.ring.visible = this.available(it, step, fl);
-        if (it.obj && it.hideOnCollect) it.obj.visible = !(fl[it.group] || []).includes(it.id);
-        if (it.obj && it.hideOnCollect && it.obj.visible && it.group !== 'sit') it.obj.rotation.y += dt * 0.8;
-      }
     }
-    this.hud.prompt(best ? (best.kind === 'sit' && me.sit ? '起身' : best.label) : null);
-    if (best && this.input.consume('KeyE')) this.interact(best);
-    if (!frozen && this.input.consume('KeyQ')) this.emote('wave');
+    if (me.sit && !frozen) {
+      this.hud.prompt('起身');
+      if (this.input.consume('KeyE')) this.standUp();
+    } else {
+      this.hud.prompt(best ? best.label : null);
+      if (best && this.input.consume('KeyE')) this.interact(best);
+    }
+    if (!frozen && !me.sit && this.input.consume('KeyQ')) this.emote('wave');
 
     // Network.
     me.sendT += dt;
@@ -413,18 +532,18 @@ export class Game {
     if (!step || it.active === false) return false;
     if ((step.type === 'collect' || step.type === 'ordered') && it.group === step.group) return !(fl[it.group] || []).includes(it.id);
     if (step.type === 'talk') return it.id === step.target;
-    if (step.type === 'each') return it.id === step.target && !(fl.each || []).includes(this.me.role);
+    if (step.type === 'each') return it.id === step.target && !(fl.each || []).includes(net.myPlayer().id);
     return false;
   }
 
   interact(it) {
     if (it.kind === 'sit') {
-      this.me.sit = this.me.sit ? null : it.seat;
+      this.sitDown(it.seat);
       return;
     }
     if (it.anim !== 'none') this.emote(it.anim);
     this.audio.sfx(it.group === 'star' ? 'goal' : 'pickup');
-    net.callHost('act', { id: it.id, role: this.me.role, from: net.myPlayer().id });
+    net.callHost('act', { id: it.id, from: net.myPlayer().id });
   }
 
   emote(name) {
@@ -441,11 +560,16 @@ export class Game {
   updateRemotes(dt) {
     for (const r of this.remotes.values()) {
       const p = r.p;
+      const role = p.getState('role');
+      if (!role) continue;
+      // Two humans must never share a role (a joiner can pick before the other's role has synced):
+      // the non-host yields, so whoever was already playing keeps their character.
+      if (role === this.me.role && !net.isHost()) this.switchRole(otherRole(role));
+      if (r.char && r.role !== role) { r.char.dispose(); r.char = null; }
       if (!r.char) {
-        const role = p.getState('role');
-        if (!role) continue;
         const name = p.getState('name') || '同伴';
         r.char = new Character(ROLES[role].model, { label: tag(name, role), color: ROLES[role].color });
+        r.role = role;
         this.scene.add(r.char.root);
       }
       const here = p.getState('ld') === this.areaKey;
@@ -457,7 +581,8 @@ export class Game {
         r.yaw = angleLerp(r.yaw, s[3], 1 - Math.exp(-dt * 10));
       } else r.seen = false;
       r.char.root.visible = r.seen && r.char.opacity > 0.01;
-      r.char.root.position.lerp(r.target, 1 - Math.exp(-dt * 10));
+      if (r.char.root.position.distanceTo(r.target) > 1.2) r.char.root.position.copy(r.target);
+      else r.char.root.position.lerp(r.target, 1 - Math.exp(-dt * 10));
       r.char.root.rotation.y = r.yaw;
       const ev = p.getState('e') || '';
       if (ev !== r.ev) {
@@ -471,6 +596,20 @@ export class Game {
     }
   }
 
+  switchRole(role) {
+    const me = this.me;
+    me.role = role;
+    net.myPlayer().setState('role', role, true);
+    if (me.sit) this.standUp();
+    me.char.dispose();
+    me.char = new Character(ROLES[role].model);
+    me.char.root.position.copy(me.pos);
+    this.scene.add(me.char.root);
+    me.anim = '';
+    this.hud.setInvite(location.href, ROLES[role].name, ROLES[otherRole(role)].name, !this.online);
+    this.hud.toast(`你现在扮演${ROLES[role].name}`);
+  }
+
   // AI companion when you're travelling alone.
   updateAI(dt, t, g) {
     const solo = this.remotes.size === 0;
@@ -478,7 +617,7 @@ export class Game {
       const role = otherRole(this.me.role);
       const char = new Character(ROLES[role].model, { label: `${ROLES[role].name}（AI）`, color: ROLES[role].color });
       this.scene.add(char.root);
-      this.ai = { role, char, pos: V(), yaw: 0, stuck: 0, waveIn: 0, anim: '' };
+      this.ai = { role, char, pos: V(), yaw: 0, stuck: 0, anchor: V(), followT: V(), waveIn: 0, anim: '' };
       this.placeAI();
     } else if (!solo && this.ai) {
       this.ai.char.dispose();
@@ -487,17 +626,43 @@ export class Game {
     const ai = this.ai;
     if (!ai || !this.area || this.loading) return;
     const step = this.step(g);
+
+    // When you sit, the AI takes the seat facing you; when you stand, it gets up too.
+    const want = this.me.sit?.seat.partner;
+    if (ai.sit && ai.sit.seat !== want) this.aiStand();
+    if (ai.sit) {
+      ai.waveIn = 0;
+      ai.pos.set(ai.sit.x, ai.sit.y, ai.sit.z);
+      ai.yaw = ai.sit.yaw;
+      if (ai.anim !== 'sit') { ai.char.play('sit'); ai.anim = 'sit'; }
+      ai.char.root.position.copy(ai.pos);
+      ai.char.root.rotation.y = ai.yaw;
+      ai.char.update(dt);
+      return;
+    }
+
     let target, stopAt, following = false;
-    if (step?.type === 'plates') {
+    if (step?.type === 'plates' && step.plates.every((id) => this.area.points[id])) {
       const [a, b] = step.plates.map((id) => this.area.points[id]);
       target = flat(this.me.pos, a) < flat(this.me.pos, b) ? b : a;
       stopAt = 0.4;
+    } else if (want && !this.seatTaken(want, 'ai')) {
+      target = V().set(want.standX, 0, want.standZ);
+      stopAt = 0.35;
+      if (flat(ai.pos, target) <= stopAt && !this.hud.dialogOpen) {
+        ai.sit = this.seatPose(ai.char, want);
+        return;
+      }
     } else if (this.me.sit) {
       target = this.me.pos;
       stopAt = 1.6;
     } else {
-      const behind = this._v.set(-Math.sin(this.me.yaw) * 1.2 + Math.cos(this.me.yaw) * 1.1, 0, -Math.cos(this.me.yaw) * 1.2 - Math.sin(this.me.yaw) * 1.1);
-      target = behind.add(this.me.pos);
+      // Walk a little behind and beside you (straight behind in narrow places like the carriage),
+      // aiming at the nearest free spot so the target is never inside a bench or wall.
+      const side = this.area.narrow ? 0 : 1.1;
+      const s = Math.sin(this.me.yaw), c = Math.cos(this.me.yaw);
+      target = ai.followT.set(this.me.pos.x - s * 1.2 + c * side, 0, this.me.pos.z - c * 1.2 - s * side);
+      this.unstick(target);
       stopAt = 0.7;
       following = true;
     }
@@ -514,16 +679,21 @@ export class Game {
         const h = base + off;
         if (this.moveWithCollision(ai.pos, Math.sin(h) * sp, Math.cos(h) * sp)) { heading = h; break; }
       }
-      const progressed = flat(ai.pos, target) < d - sp * 0.15;
-      ai.stuck = progressed ? Math.max(0, ai.stuck - dt) : ai.stuck + dt;
+      // Stuck = less than 0.5 m of net progress toward the target for 1.5 s. (A per-frame test is
+      // fooled by jittering against an obstacle such as the lighthouse.)
+      if (flat(ai.anchor, target) - flat(ai.pos, target) > 0.5) { ai.anchor.copy(ai.pos); ai.stuck = 0; }
+      else ai.stuck += dt;
       if (ai.stuck > 1.5) {
         ai.stuck = 0;
-        if (this.area.walkable(target.x, target.z)) ai.pos.set(target.x, ai.pos.y, target.z);
+        if (this.area.walkable(target.x, target.z)) { ai.pos.set(target.x, ai.pos.y, target.z); this.unstick(ai.pos); }
         else this.placeAI();
+        ai.anchor.copy(ai.pos);
       }
       ai.yaw = angleLerp(ai.yaw, heading, 1 - Math.exp(-dt * 10));
       anim = run ? 'run' : 'walk';
     } else {
+      ai.anchor.copy(ai.pos);
+      ai.stuck = 0;
       ai.yaw = angleLerp(ai.yaw, Math.atan2(this.me.pos.x - ai.pos.x, this.me.pos.z - ai.pos.z), 1 - Math.exp(-dt * 3));
     }
     ai.pos.y += (this.area.height(ai.pos.x, ai.pos.z) - ai.pos.y) * (1 - Math.exp(-dt * 18));
@@ -541,16 +711,29 @@ export class Game {
   placeAI() {
     const ai = this.ai;
     if (!ai || !this.area) return;
+    ai.sit = null;
     const idx = ai.role === 'giovanni' ? 0 : 1;
     const [x, z, yaw] = this.area.spawns[idx];
+    // Next to its own spawn when you're near it, otherwise the nearest free spot behind you
+    // (never the far spawn, which would re-trigger the "too far" teleport every frame).
     const near = flat(this.me.pos, { x, z }) < 6;
-    const px = near ? x : this.me.pos.x - Math.sin(this.me.yaw) * 1.4;
-    const pz = near ? z : this.me.pos.z - Math.cos(this.me.yaw) * 1.4;
-    const ok = this.area.walkable(px, pz);
-    ai.pos.set(ok ? px : x, 0, ok ? pz : z);
+    ai.pos.set(near ? x : this.me.pos.x - Math.sin(this.me.yaw) * 1.4, 0, near ? z : this.me.pos.z - Math.cos(this.me.yaw) * 1.4);
+    this.unstick(ai.pos);
+    if (!this.isFree(ai.pos.x, ai.pos.z)) { ai.pos.set(this.me.pos.x, 0, this.me.pos.z); this.unstick(ai.pos); }
     ai.pos.y = this.area.height(ai.pos.x, ai.pos.z);
+    ai.anchor.copy(ai.pos);
+    ai.stuck = 0;
     ai.yaw = yaw;
     ai.char.root.position.copy(ai.pos);
+  }
+
+  aiStand() {
+    const ai = this.ai;
+    const seat = ai.sit.seat;
+    ai.sit = null;
+    ai.anim = '';
+    ai.pos.set(seat.standX, this.area.height(seat.standX, seat.standZ), seat.standZ);
+    this.unstick(ai.pos);
   }
 
   // Campanella fades into light at the Coalsack and returns as a faint spirit at dawn.
@@ -607,7 +790,7 @@ export class Game {
       if (step.need) text += `（${(fl[step.group] || []).length}/${step.need}）`;
       if (step.type === 'each') {
         const humans = this.party().filter((m) => m.human);
-        text += `（${humans.filter((m) => (fl.each || []).includes(m.role)).length}/${humans.length}）`;
+        text += `（${humans.filter((m) => (fl.each || []).includes(m.id)).length}/${humans.length}）`;
       }
     }
     this.hud.objective(text);
