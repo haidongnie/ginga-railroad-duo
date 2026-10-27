@@ -1,0 +1,124 @@
+{
+  "giovanni": {
+    "preview": "01a17cac-051c-7212-a434-895469b63dc8",
+    "refine": "01a17cac-8561-7068-b886-74433a672742",
+    "rig": "01a17cad-3bb9-76a0-97b2-8ab49863d830",
+    "anim": "01a17cad-c778-73ad-8efb-e5288f130500",
+    "done": true
+  },
+  "campanella": {
+    "preview": "01a17ca5-d1a5-74c3-a4b5-0eaa87e85223",
+    "refine": "01a17ca6-43d1-706a-af95-ffb559e716d6",
+    "rig": "01a17ca6-caea-77e0-a56f-e52fcbdb4231",
+    "anim": "01a17ca7-4a22-7731-a06f-2260bf9ca031",
+    "done": true
+  },
+  "birdcatcher": {
+    "preview": "01a17ca5-d205-7621-b85f-b4a29c06b31c",
+    "refine": "01a17ca6-2a6a-70d2-8b89-4aec81969a97",
+    "rig": "01a17ca6-d496-772a-8a6e-73695150328d",
+    "anim": "01a17ca7-43c0-7784-8a66-b517364cc335",
+    "done": true
+  },
+  "keeper": {
+    "preview": "01a17ca5-d199-7117-b71c-195544b8fcca",
+    "refine": "01a17ca6-4b41-7119-88ad-1506377757cf",
+    "rig": "01a17ca6-e627-75db-95ea-8c3488796b5b",
+    "anim": "01a17ca7-4879-7725-abc6-f85c6c0c88c2",
+    "done": true
+  },
+  "kaoru": {
+    "preview": "01a17ca5-d1f7-71ff-96dc-110ee743710b",
+    "refine": "01a17ca6-4446-7682-8434-2661498ae92d",
+    "rig": "01a17ca6-e838-71c3-a203-af7f3d39b799",
+    "anim": "01a17ca7-56f7-7141-b926-cd218a9ac4c3",
+    "done": true
+  },
+  "conductor": {
+    "preview": "01a17ca5-d1a1-7182-84e7-af931c7657b9",
+    "refine": "01a17ca6-4034-775e-9a00-1c55a78d3239",
+    "rig": "01a17ca6-f6ca-7125-a14b-b6d77479b491",
+    "anim": "01a17ca7-4e9e-7188-92d0-5b030f73412c",
+    "done": true
+  },
+  "locomotive": {
+    "preview": "01a17ca7-b2fb-704c-a0c8-11971696b8ba",
+    "refine": "01a17ca7-ff71-7158-be1c-87ee6358ec61",
+    "done": true
+  },
+  "carriage": {
+    "preview": "01a17ca7-bc39-766d-a637-cd13375547ee",
+    "refine": "01a17ca8-0912-743c-8553-7af0ce95739f",
+    "done": true
+  },
+  "seat": {
+    "preview": "01a17ca7-c4f1-732b-895d-0f220ecea6fd",
+    "refine": "01a17ca8-30fe-7475-bab1-414f1287409d",
+    "done": true
+  },
+  "pillar": {
+    "preview": "01a17ca7-dc85-73b1-b0d8-bc3c6a72081d",
+    "refine": "01a17ca8-2cdf-723d-9087-b80c095bbb5c",
+    "done": true
+  },
+  "streetlamp": {
+    "preview": "01a17ca8-5f0d-77a5-8fec-a852c8034d05",
+    "refine": "01a17ca8-aa4c-7451-829e-393f77d409ef",
+    "done": true
+  },
+  "station": {
+    "preview": "01a17ca8-6916-70f1-88cd-0d17c6f47c68",
+    "refine": "01a17ca8-b8c5-70c7-8bde-87e6085c521d",
+    "done": true
+  },
+  "fossil": {
+    "preview": "01a17ca8-ae4f-72db-903e-5bf9c190978f",
+    "refine": "01a17ca9-1cc3-72e2-b8a6-f34b8bbdd550",
+    "done": true
+  },
+  "heron": {
+    "preview": "01a17ca8-c872-711f-a9da-c4d67429a70b",
+    "refine": "01a17ca9-31c9-77ef-a203-0acaeaed8fca",
+    "done": true
+  },
+  "lighthouse": {
+    "preview": "01a17ca8-d06d-706c-a7a7-72145ddcdde5",
+    "refine": "01a17ca9-1ccd-7403-a013-75c4632484f5",
+    "done": true
+  },
+  "appletree": {
+    "preview": "01a17ca8-e162-7634-a3bf-4ad313936643",
+    "refine": "01a17ca9-4dec-7124-bbec-4df678343fbb",
+    "done": true
+  },
+  "apple": {
+    "preview": "01a17ca9-75f5-7487-a368-574975409dcf",
+    "refine": "01a17ca9-c1c2-76a9-ade2-9709ed8158ed",
+    "done": true
+  },
+  "scorpion": {
+    "preview": "01a17ca9-97a5-716e-896f-51172cff9b79",
+    "refine": "01a17ca9-e122-71e1-ba98-b0f1e5c8a972",
+    "done": true
+  },
+  "cross": {
+    "preview": "01a17ca9-b476-77d3-8138-6ae7b4ae81ac",
+    "refine": "01a17caa-2386-7213-a035-9f984995ece9",
+    "done": true
+  },
+  "crystals": {
+    "preview": "01a17ca9-d5df-72ad-9462-aa3fd23ce735",
+    "refine": "01a17caa-2631-7244-a99b-4f5eac775c40",
+    "done": true
+  },
+  "gentian": {
+    "preview": "01a17ca9-fa52-75e0-808d-2ae9e3e5c50e",
+    "refine": "01a17caa-461c-703a-b6cd-67ec6eb47f2b",
+    "done": true
+  },
+  "signal": {
+    "preview": "01a17caa-31c6-77fb-ad47-4d06c8b8db50",
+    "refine": "01a17caa-7f1e-72cb-a947-30422305ccce",
+    "done": true
+  }
+}

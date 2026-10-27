@@ -1,0 +1,22 @@
+{
+  "name": "ginga-railroad-duo",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview",
+    "assets:generate": "node tools/meshy.mjs",
+    "assets:optimize": "node tools/optimize.mjs"
+  },
+  "dependencies": {
+    "playroomkit": "^0.0.97",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "^4.5.1",
+    "undici": "^7.30.1",
+    "vite": "^7.3.7"
+  }
+}

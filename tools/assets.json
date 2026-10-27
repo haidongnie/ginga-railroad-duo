@@ -1,0 +1,172 @@
+{
+  "style": "stylized hand-painted storybook style, soft colors, clean game asset",
+  "texture_style": "hand-painted storybook colors, soft gradients, subtle wear",
+  "assets": [
+    {
+      "id": "giovanni",
+      "kind": "character",
+      "polycount": 15000,
+      "height": 1.45,
+      "anims": [0, 30, 14, 290, 276, 33],
+      "prompt": "Full body game character of a 12-year-old schoolboy, male child, boyish face, very short cropped messy black hair above the ears, wearing a worn navy-blue wool school jacket with brass buttons, white shirt collar, brown knee-length shorts with legs visible, grey knee socks, scuffed brown leather shoes, standing in A-pose, early 20th century European working-class boy",
+      "texture": "Worn navy blue wool jacket with brass buttons, white cotton collar, brown wool shorts, grey socks, brown leather shoes, warm soft skin, short black boy haircut"
+    },
+    {
+      "id": "campanella",
+      "kind": "character",
+      "polycount": 15000,
+      "height": 1.45,
+      "anims": [0, 30, 14, 290, 276, 33],
+      "prompt": "Full body game character of a 12-year-old boy, neat wavy chestnut-brown hair, kind bright face, wearing a black short cape coat over a white shirt with a small red ribbon tie, dark grey shorts, white knee socks, black polished boots, standing in A-pose, early 20th century European schoolboy",
+      "texture": "Black wool cape coat, crisp white shirt, small red silk ribbon tie, dark grey shorts, white socks, glossy black boots, warm soft skin, chestnut hair"
+    },
+    {
+      "id": "birdcatcher",
+      "kind": "character",
+      "polycount": 12000,
+      "height": 1.75,
+      "anims": [0, 313],
+      "prompt": "Full body game character of a cheerful middle-aged bird catcher with a short red-brown beard, wearing a wide-brimmed felt hat and a long patched brown overcoat, a white cloth bundle tied across his back, leather boots, standing in A-pose",
+      "texture": "Patched brown wool overcoat, dark felt hat, off-white cloth bundle, worn leather boots, ruddy cheeks, red-brown beard"
+    },
+    {
+      "id": "keeper",
+      "kind": "character",
+      "polycount": 12000,
+      "height": 1.7,
+      "anims": [0, 313],
+      "prompt": "Full body game character of an old lighthouse keeper with a white beard, wearing a navy blue peacoat with brass buttons, a dark captain cap, thick trousers and boots, standing in A-pose",
+      "texture": "Navy blue peacoat with brass buttons, dark captain cap, charcoal trousers, black boots, white beard, weathered skin"
+    },
+    {
+      "id": "kaoru",
+      "kind": "character",
+      "polycount": 12000,
+      "height": 1.3,
+      "anims": [0, 290],
+      "prompt": "Full body game character of a 10-year-old girl with long straight black hair and bangs, wearing a dark red wool coat with a white round collar, black stockings, small brown boots, standing in A-pose",
+      "texture": "Dark crimson wool coat, white round lace collar, black stockings, brown boots, soft skin, glossy black hair"
+    },
+    {
+      "id": "conductor",
+      "kind": "character",
+      "polycount": 12000,
+      "height": 1.85,
+      "anims": [0, 41],
+      "prompt": "Full body game character of a tall thin train conductor wearing a dark red uniform with gold buttons, a peaked conductor cap, white gloves, black trousers and shoes, standing in A-pose",
+      "texture": "Deep red uniform with gold buttons and gold piping, black peaked cap with gold badge, white gloves, black trousers"
+    },
+    {
+      "id": "locomotive",
+      "kind": "prop",
+      "polycount": 20000,
+      "prompt": "Small vintage 1920s steam locomotive, glossy black boiler with brass trim, red spoked wheels, a large round front headlamp, a tall funnel, cute storybook proportions",
+      "texture": "Glossy black painted steel, polished brass bands, red wheels, warm glass headlamp"
+    },
+    {
+      "id": "carriage",
+      "kind": "prop",
+      "polycount": 20000,
+      "prompt": "Vintage wooden railway passenger carriage, long rectangular body, teal-green painted wood panels, a row of tall arched windows along the side, brass handrails, gently curved roof, small doors at both ends",
+      "texture": "Teal green painted wood panels with gold pinstripes, warm yellow glowing windows, brass handrails, dark grey roof"
+    },
+    {
+      "id": "seat",
+      "kind": "prop",
+      "polycount": 4000,
+      "prompt": "Vintage train compartment double bench seat with tall backrest, blue velvet cushions, carved dark walnut wood frame",
+      "texture": "Deep blue velvet cushions, dark polished walnut wood with carved details"
+    },
+    {
+      "id": "pillar",
+      "kind": "prop",
+      "polycount": 6000,
+      "prompt": "Tall weathered grey stone pillar with an old iron spoked wheel mounted through a slot near its top, moss at the base, old Japanese weather wheel monument on a hill",
+      "texture": "Weathered grey granite with lichen, rusty dark iron wheel, green moss at the base"
+    },
+    {
+      "id": "streetlamp",
+      "kind": "prop",
+      "polycount": 3000,
+      "prompt": "Victorian cast iron street lamp post with a single glass lantern on top, slim and elegant",
+      "texture": "Dark green painted cast iron, warm glowing glass lantern"
+    },
+    {
+      "id": "station",
+      "kind": "prop",
+      "polycount": 15000,
+      "prompt": "Small Victorian railway station shelter with a wooden bench, a hanging round clock and a blank nameboard, slender wrought iron columns, slate roof",
+      "texture": "Cream painted wood, dark green wrought iron, grey slate roof, white clock face"
+    },
+    {
+      "id": "fossil",
+      "kind": "prop",
+      "polycount": 2000,
+      "prompt": "Large fossilized walnut, rounded with deep wrinkled grooves, stone",
+      "texture": "Pale beige and ochre fossil stone with fine cracks"
+    },
+    {
+      "id": "heron",
+      "kind": "prop",
+      "polycount": 5000,
+      "prompt": "Elegant white heron with wings spread wide in flight, long neck, slender legs trailing, stylized sculpture",
+      "texture": "Pure white feathers with pale silver-blue tips, yellow beak"
+    },
+    {
+      "id": "lighthouse",
+      "kind": "prop",
+      "polycount": 12000,
+      "prompt": "Small white and red striped stone lighthouse with a glass lantern room and a black iron balcony, standing on a rocky base",
+      "texture": "White and red painted stone stripes, black iron railing, clear glass lantern, grey rocks"
+    },
+    {
+      "id": "appletree",
+      "kind": "prop",
+      "polycount": 10000,
+      "prompt": "Round apple tree with lush foliage and many shiny red apples, twisted brown trunk",
+      "texture": "Vivid green leaves, glossy red apples, brown bark"
+    },
+    {
+      "id": "apple",
+      "kind": "prop",
+      "polycount": 1500,
+      "prompt": "Single shiny red apple with a short stem and one small green leaf",
+      "texture": "Glossy crimson and golden apple skin, green leaf"
+    },
+    {
+      "id": "scorpion",
+      "kind": "prop",
+      "polycount": 8000,
+      "prompt": "Scorpion sculpture made of translucent red crystal, tail curled up high, claws open",
+      "texture": "Translucent ruby red crystal with bright orange inner glow"
+    },
+    {
+      "id": "cross",
+      "kind": "prop",
+      "polycount": 10000,
+      "prompt": "Gigantic ornate cross made of white crystal, intricate gothic tracery, standing on a crystal pedestal",
+      "texture": "Luminous white and pale blue crystal with silver tracery"
+    },
+    {
+      "id": "crystals",
+      "kind": "prop",
+      "polycount": 3000,
+      "prompt": "Cluster of pale blue quartz crystals growing from a dark rock",
+      "texture": "Pale cyan translucent quartz, dark basalt rock"
+    },
+    {
+      "id": "gentian",
+      "kind": "prop",
+      "polycount": 2000,
+      "prompt": "Small clump of deep blue bell-shaped gentian flowers with narrow green leaves",
+      "texture": "Deep violet-blue petals, fresh green leaves"
+    },
+    {
+      "id": "signal",
+      "kind": "prop",
+      "polycount": 3000,
+      "prompt": "Vintage railway semaphore signal post with a red and white arm and a round signal lamp",
+      "texture": "Black iron post, red and white painted arm, green glass lamp"
+    }
+  ]
+}

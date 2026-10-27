@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="theme-color" content="#05060f" />
+  <meta name="description" content="改编自宫泽贤治《银河铁道之夜》的双人联机 3D 网页游戏。邀请一位同伴，一起乘上开往银河的列车。" />
+  <title>银河铁道之夜 · 双人旅程</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%2305060f'/%3E%3Cpath d='M16 5l2.6 7.6L26 16l-7.4 3.4L16 27l-2.6-7.6L6 16l7.4-3.4z' fill='%23bfe3ff'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./src/styles.css" />
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <!-- Title screen -->
+  <section id="title" class="screen">
+    <div class="title-wrap">
+      <p class="eyebrow">宫泽贤治 原著 · 双人联机</p>
+      <h1>银河铁道之夜</h1>
+      <p class="sub">Night on the Galactic Railroad</p>
+      <p class="lede">半人马祭的夜里，两个少年登上了开往银河的列车。<br />邀请一位同伴，一起去寻找“大家真正的幸福”。</p>
+      <div class="form">
+        <input id="name" maxlength="10" placeholder="你的名字" autocomplete="off" />
+        <button id="start" class="primary" disabled>载入中…</button>
+      </div>
+      <div class="loadbar"><i id="loadfill"></i></div>
+      <p id="loadtext" class="hint">正在准备星空……</p>
+      <p id="joinhint" class="hint join" hidden>你收到了同伴的邀请，按下“上车”即可加入同一班列车。</p>
+    </div>
+    <footer>3D 资产由 Meshy AI 生成 · Three.js · Playroom Kit</footer>
+  </section>
+
+  <!-- In-game HUD -->
+  <section id="hud" hidden>
+    <div class="top-left">
+      <div id="chapter" class="chapter"></div>
+      <div id="objective" class="objective"></div>
+    </div>
+    <div class="top-right">
+      <div id="party" class="party"></div>
+      <button id="btn-invite" class="chip">邀请同伴</button>
+      <button id="btn-sound" class="chip icon" title="声音">♪</button>
+      <button id="btn-help" class="chip icon" title="操作说明">?</button>
+    </div>
+    <div id="prompt" class="prompt" hidden></div>
+    <div id="toast" class="toast" hidden></div>
+    <div id="dialog" class="dialog" hidden>
+      <div id="dlg-name" class="dlg-name"></div>
+      <div id="dlg-text" class="dlg-text"></div>
+      <div class="dlg-next">点击 / 空格 继续 ▸</div>
+    </div>
+    <div id="touch" class="touch" hidden>
+      <div id="stick" class="stick"><i></i></div>
+      <button id="t-act" class="tbtn act">互动</button>
+      <button id="t-run" class="tbtn run">跑</button>
+      <button id="t-wave" class="tbtn wave">挥手</button>
+    </div>
+  </section>
+
+  <div id="card" class="card" hidden><small></small><h2></h2></div>
+  <div id="fade" class="fade"></div>
+
+  <div id="invite" class="modal" hidden>
+    <div class="panel">
+      <h3>邀请一位同伴</h3>
+      <p>把这个链接发给朋友，对方打开后就会登上同一班列车。<br />你扮演的是 <b id="inv-role"></b>，同伴将扮演 <b id="inv-other"></b>。</p>
+      <div class="linkrow"><input id="inv-link" readonly /><button id="inv-copy" class="primary">复制</button></div>
+      <p class="hint">同伴未到时，<span id="inv-ai"></span>会由 AI 陪你同行。</p>
+      <button class="close ghost" data-close>关闭</button>
+    </div>
+  </div>
+
+  <div id="help" class="modal" hidden>
+    <div class="panel">
+      <h3>操作说明</h3>
+      <ul class="keys">
+        <li><kbd>W A S D</kbd> / 方向键　移动</li>
+        <li><kbd>Shift</kbd>　奔跑</li>
+        <li><kbd>E</kbd>　互动 / 拾取 / 坐下</li>
+        <li><kbd>Q</kbd>　挥手</li>
+        <li><kbd>空格</kbd> / 点击　推进对话</li>
+        <li>拖动鼠标　转动视角，滚轮　拉近拉远</li>
+        <li>手机：左下摇杆移动，右侧拖动转视角</li>
+      </ul>
+      <button class="close ghost" data-close>知道了</button>
+    </div>
+  </div>
+
+  <section id="ending" class="screen ending" hidden>
+    <div class="title-wrap">
+      <p class="eyebrow">终</p>
+      <h1>银河铁道之夜</h1>
+      <p class="lede" id="ending-text"></p>
+      <p class="credits">原著：宫泽贤治《银河铁道之夜》（1934）<br />3D 模型：Meshy AI（meshy-t2.5）生成 · 渲染：Three.js · 联机：Playroom Kit</p>
+      <button id="again" class="primary">再乘一次</button>
+    </div>
+  </section>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
